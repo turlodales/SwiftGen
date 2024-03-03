@@ -8,24 +8,17 @@ on:
 jobs:
   install:
     name: Install
-    runs-on: macos-11
+    runs-on: macos-12
     steps:
       - 
         name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - 
         name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
-      - 
-        name: Cache SPM
-        uses: actions/cache@v2
-        with:
-          path: .build
-          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
-          restore-keys: |
-            ${{ runner.os }}-spm-
+      # Note: there's no SPM cache step here, to ensure "clean" compilation works
       -
         name: Verify installation
         run: bundle exec rake cli:install[./standalone,./standalone/frameworks,./standalone/stencils]
@@ -34,14 +27,17 @@ jobs:
         run: |
             ./standalone/swiftgen --version
             ./standalone/swiftgen templates list
+      -
+        name: Test binary output
+        run: bundle exec rake cli:test[./standalone,./standalone/frameworks,./standalone/stencils]
 
   zip:
     name: Zip
-    runs-on: macos-11
+    runs-on: macos-12
     steps:
       - 
         name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - 
         name: Setup Ruby
         uses: ruby/setup-ruby@v1
@@ -49,18 +45,18 @@ jobs:
           bundler-cache: true
       - 
         name: Cache SPM
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: .build
           key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
           restore-keys: |
             ${{ runner.os }}-spm-
       -
-        name: Create zip
-        run: bundle exec rake release:zip
+        name: Create zip & artifactbundle
+        run: bundle exec rake release:artifactbundle
       -
         name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: SwiftGen.zip
           path: .build/swiftgen-*.zip
